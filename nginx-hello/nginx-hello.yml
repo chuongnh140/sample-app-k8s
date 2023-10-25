@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name:  nginx-hello
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sample-nginx-hello
+  labels:
+    app: nginx-hello
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-hello
+  template:
+    metadata:
+      labels:
+        app: nginx-hello
+    spec:
+      containers:
+      - name: nginx-hello
+        image: nginxdemos/hello:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: nginx-hello
+  name: nginx-hello
+spec:
+  selector:
+    app: nginx-hello
+  type:  ClusterIP
+  ports:
+  - name:  nginx-hello
+    port:  80
+    targetPort:  80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.class: haproxy
+  name: nginx-hello
+spec:
+  ingressClassName: haproxy
+  rules:
+  - host: nginx-hello.dbrr.lc
+    http:
+      paths:
+      - backend:
+          service:
+            name: nginx-hello
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+
